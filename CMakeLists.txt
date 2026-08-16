@@ -9,6 +9,7 @@ add_executable(
     src/main.cpp
     src/map/Map.cpp
     src/io/JsonExporter.cpp
+    src/map/generators/PerlinNoise.cpp
 )
 
 target_include_directories(

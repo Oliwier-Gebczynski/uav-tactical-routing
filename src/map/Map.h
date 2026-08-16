@@ -8,7 +8,9 @@ class Map{
         int width;
         int height;
 
-        std::vector<std::vector<Cell>> cells;
+        std::vector<Cell> cells;
+
+        int index(int x, int y) const;
 
     public:
         Map(int width, int height);
@@ -18,4 +20,6 @@ class Map{
 
         Cell& getCell(int x, int y);
         const Cell& getCell(int x, int y) const;
+
+        bool isInside(int x, int y) const;
 };

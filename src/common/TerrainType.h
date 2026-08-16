@@ -4,7 +4,6 @@
 
 enum class TerrainType{
     Grass,
-    Field,
     Forest,
     Road,
     Building,
@@ -15,9 +14,6 @@ inline std::string TerrainTypeToString(TerrainType type){
     switch(type){
         case TerrainType::Grass:
             return "grass";
-
-        case TerrainType::Field:
-            return "field";
 
         case TerrainType::Forest:
             return "forest";
