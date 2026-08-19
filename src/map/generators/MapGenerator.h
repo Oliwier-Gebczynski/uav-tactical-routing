@@ -1,14 +1,17 @@
-#pragma once
-
-#include "../Map.h"
-#include "PerlinNoise.h"
-#include <random>
-
-class MapGenerator{
-    public:
-        static void generateProceduralMap(Map& map, int seed);
-    
-    private:
-        static void placeRoadSegment(Map& map, int x0, int y0, int x1, int y1);
-        static void placeBuilding(Map& map, int startX, int startY, int width, int height, float buildingHeight);
-};
+#pragma once                                                
+                                                                
+#include "../Map.h"                                         
+#include "./biomes/IMap.h"                                       
+#include <vector>                                           
+#include <memory>                                           
+                                                                
+class MapGenerator {                                        
+    private:                                                    
+        std::vector<std::unique_ptr<IMap>> passes;                                                               
+    public:                                                     
+        MapGenerator() = default;                               
+                                                                                   
+        void addPass(std::unique_ptr<IMap> pass);                                                                                     
+        void generate(Map& map, int seed);                                                                                                                 
+        static void generateProceduralMap(Map& map, int seed);  
+};  

@@ -11,6 +11,10 @@ add_executable(
     src/io/JsonExporter.cpp
     src/map/generators/PerlinNoise.cpp
     src/map/generators/MapGenerator.cpp
+    src/map/generators/biomes/BaseTerrain.cpp
+    src/map/generators/biomes/ForestTerrain.cpp
+    src/map/generators/biomes/RoadTerrain.cpp
+    src/map/generators/biomes/BuildingTerrain.cpp
 )
 
 target_include_directories(
