@@ -15,6 +15,7 @@ add_executable(
     src/map/generators/biomes/ForestTerrain.cpp
     src/map/generators/biomes/RoadTerrain.cpp
     src/map/generators/biomes/BuildingTerrain.cpp
+    src/map/threats/ThreatMap.cpp
 )
 
 target_include_directories(
