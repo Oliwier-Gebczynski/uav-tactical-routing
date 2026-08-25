@@ -30,3 +30,17 @@ inline std::string TerrainTypeToString(TerrainType type){
 
     return "unknown";
 }
+
+inline float getTerrainFeatureHeight(TerrainType type) {
+    switch (type) {
+        case TerrainType::Forest:
+            return 12.0f; // Wysokość koron drzew (las)
+        case TerrainType::Building:
+            return 10.0f; // Średnia wysokość zabudowań
+        case TerrainType::Grass:
+        case TerrainType::Road:
+        case TerrainType::Water:
+        default:
+            return 0.0f;
+    }
+}

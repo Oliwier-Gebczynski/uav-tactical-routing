@@ -34,20 +34,26 @@ bool ThreatMap::hasLineOfSight(const Map& map, const RadarStation& radar, int ta
     int steps = static_cast<int>(std::ceil(distance * 2.0f));
 
     for(int step = 1; step < steps; ++step){
-        float t = static_cast<float>(step) / static_cast<float>(steps);              
-                                                                                         
-        int sampleX = static_cast<int>(std::round(radar.x + t * dx));                
-        int sampleY = static_cast<int>(std::round(radar.y + t * dy));                
-                                                                                         
-        if (!map.isInside(sampleX, sampleY)) continue;                               
-                                                                                                                   
-        float rayHeight = radarAlt + t * (targetAlt - radarAlt);                     
-                                                                                                              
-        float terrainHeight = map.getCell(sampleX, sampleY).elevation;               
-        
-        if (terrainHeight > rayHeight) {                                             
-            return false;                                                            
-        }   
+        float t = static_cast<float>(step) / static_cast<float>(steps);
+
+        int sampleX = static_cast<int>(std::round(radar.x + t * dx));
+        int sampleY = static_cast<int>(std::round(radar.y + t * dy));
+
+        if (!map.isInside(sampleX, sampleY)) continue;
+
+        // Pomiń punkt startowy (radar) oraz cel (UAV) - sprawdzamy tylko przeszkody pośrednie
+        if ((sampleX == radar.x && sampleY == radar.y) || (sampleX == targetX && sampleY == targetY)) {
+            continue;
+        }
+
+        float rayHeight = radarAlt + t * (targetAlt - radarAlt);
+
+        const Cell& sampleCell = map.getCell(sampleX, sampleY);
+        float effectiveTerrainHeight = sampleCell.elevation + getTerrainFeatureHeight(sampleCell.terrain);
+
+        if (effectiveTerrainHeight > rayHeight) {
+            return false;
+        }
     }
 
     return true;
@@ -90,7 +96,7 @@ void ThreatMap::generateProceduralRadars(const Map& map, int count, float minDis
         }                                                                            
                                                                                          
         if (!tooClose) {                                                                                        
-            radars.emplace_back(idCounter++, cand.x, cand.y, 28.0f, 1.0f, 5.0f);     
+            radars.emplace_back(idCounter++, cand.x, cand.y, 28.0f, 1.0f, 15.0f);     
         }                                                                            
     }                                                                                
 }                                                                                    
