@@ -5,7 +5,6 @@
 #include <random>
 #include <algorithm>
 
-
 float PerlinNoise::fade(float t){
     return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
 }

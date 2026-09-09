@@ -13,7 +13,7 @@ struct PathStats {
 
 class Path {
 private:
-    std::vector<Point3D> points; // Dokładna sekwencja odwiedzonych kratek siatki (x, y, z)
+    std::vector<Point3D> points;
 
 public:
     Path() = default;
@@ -26,13 +26,11 @@ public:
     size_t size() const;
     bool empty() const;
 
-    // Statystyki trasy
     float calculateTotalDistance() const;
     float calculateTotalThreatCost(const Map& map) const;
     float calculateMaxThreat(const Map& map) const;
     PathStats getStats(const Map& map) const;
 
-    // Interpolacja gęstej ścieżki (kratka po kratce) pomiędzy dwoma punktami (Supercover / Grid Traversal)
     static std::vector<Point3D> interpolateSegment(float x0, float y0, float x1, float y1,
                                                   const Map& map, float uavAltitudeAGL = 10.0f);
 };

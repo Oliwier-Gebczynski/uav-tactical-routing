@@ -34,9 +34,9 @@ inline std::string TerrainTypeToString(TerrainType type){
 inline float getTerrainFeatureHeight(TerrainType type) {
     switch (type) {
         case TerrainType::Forest:
-            return 12.0f; // Wysokość koron drzew (las)
+            return 12.0f;
         case TerrainType::Building:
-            return 10.0f; // Średnia wysokość zabudowań
+            return 10.0f;
         case TerrainType::Grass:
         case TerrainType::Road:
         case TerrainType::Water:

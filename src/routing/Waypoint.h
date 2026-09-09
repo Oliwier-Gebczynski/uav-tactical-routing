@@ -3,10 +3,10 @@
 #include <string>
 
 enum class WaypointType {
-    Start,          // Baza startowa / Start misji
-    Reconnaissance, // Cel rozpoznania / Obiekt zainteresowania
-    Transit,        // Punkt nawigacyjny / korytarz przelotowy
-    Return          // Punkt powrotu / Lądowisko
+    Start,
+    Reconnaissance,
+    Transit,
+    Return
 };
 
 inline std::string WaypointTypeToString(WaypointType type) {
@@ -26,7 +26,7 @@ inline std::string WaypointTypeToString(WaypointType type) {
 struct Point3D {
     float x;
     float y;
-    float z; // Wysokość bezwzględna (m n.p.m.)
+    float z;
 
     Point3D() : x(0.0f), y(0.0f), z(0.0f) {}
     Point3D(float x, float y, float z = 0.0f) : x(x), y(y), z(z) {}
@@ -41,7 +41,7 @@ struct Waypoint {
     int id;
     float x;
     float y;
-    float altitudeAGL; // Wysokość nad gruntem (Above Ground Level, np. 10m)
+    float altitudeAGL;
     WaypointType type;
     std::string name;
 

@@ -8,11 +8,17 @@
 #include <string>
 #include <vector>
 
+struct DecisionEvent;
+struct SAResult;
+
 class JsonExporter {
 public:
     static void save(const Map& map,
                      const std::string& filename,
                      const std::vector<RadarStation>& radars = {},
                      const Mission* mission = nullptr,
-                     const Path* path = nullptr);
+                     const Path* path = nullptr,
+                     const std::vector<Waypoint>* waypoints = nullptr,
+                     const std::vector<DecisionEvent>* decisionLog = nullptr,
+                     const SAResult* saResult = nullptr);
 };

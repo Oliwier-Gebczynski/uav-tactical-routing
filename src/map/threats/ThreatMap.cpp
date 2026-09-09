@@ -41,7 +41,6 @@ bool ThreatMap::hasLineOfSight(const Map& map, const RadarStation& radar, int ta
 
         if (!map.isInside(sampleX, sampleY)) continue;
 
-        // Pomiń punkt startowy (radar) oraz cel (UAV) - sprawdzamy tylko przeszkody pośrednie
         if ((sampleX == radar.x && sampleY == radar.y) || (sampleX == targetX && sampleY == targetY)) {
             continue;
         }
@@ -59,78 +58,78 @@ bool ThreatMap::hasLineOfSight(const Map& map, const RadarStation& radar, int ta
     return true;
 }
 
-void ThreatMap::generateProceduralRadars(const Map& map, int count, float minDistanceBetweenRadars, std::mt19937& rng) {                                         
-    int w = map.getWidth();                                                          
-    int h = map.getHeight();                                                         
-                 
-    struct Candidate {                                                               
-        int x, y;                                                                    
-        float elevation;                                                             
-    };                                                                               
-    std::vector<Candidate> candidates;                                               
-                                                                                         
-    for (int y = 2; y < h - 2; ++y) {                                                
-        for (int x = 2; x < w - 2; ++x) {                                            
-            const Cell& c = map.getCell(x, y);                                       
-            if (c.terrain != TerrainType::Water && c.terrain != TerrainType::Road) { 
-                candidates.push_back({x, y, c.elevation});                           
-            }                                                                        
-        }                                                                            
-    }                                                                                
-                                                                                                                                                                       
-    std::sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {                                                                        
-        return a.elevation > b.elevation;                                            
-    });                                                                              
-                       
-    int idCounter = 1;                                                               
-    for (const auto& cand : candidates) {                                            
-        if (static_cast<int>(radars.size()) >= count) break;                         
-                                                                                         
-        bool tooClose = false;                                                       
-        for (const auto& r : radars) {                                               
-            float dist = std::sqrt(std::pow(cand.x - r.x, 2) + std::pow(cand.y - r.y, 2));                                                                                   
-            if (dist < minDistanceBetweenRadars) {                                   
-                tooClose = true;                                                     
-                break;                                                               
-            }                                                                        
-        }                                                                            
-                                                                                         
-        if (!tooClose) {                                                                                        
-            radars.emplace_back(idCounter++, cand.x, cand.y, 28.0f, 1.0f, 15.0f);     
-        }                                                                            
-    }                                                                                
-}                                                                                    
-                                                                                         
-void ThreatMap::calculateThreats(Map& map, float uavFlightAltitude) {                
-    int w = map.getWidth();                                                          
-    int h = map.getHeight();                                                         
-                                  
-    for (int y = 0; y < h; ++y) {                                                    
-        for (int x = 0; x < w; ++x) {                                                
-            map.getCell(x, y).threatLevel = 0.0f;                                    
-        }                                                                            
-    }                                                                                
-                                             
-    for (const auto& radar : radars) {                                               
-        int minX = std::max(0, static_cast<int>(radar.x - radar.range));             
-        int maxX = std::min(w - 1, static_cast<int>(radar.x + radar.range));         
-        int minY = std::max(0, static_cast<int>(radar.y - radar.range));             
-        int maxY = std::min(h - 1, static_cast<int>(radar.y + radar.range));         
-                                                                                         
-        for (int y = minY; y <= maxY; ++y) {                                         
-            for (int x = minX; x <= maxX; ++x) {                                     
-                float dist = std::sqrt(std::pow(x - radar.x, 2) + std::pow(y - radar.y, 2));                                                                                
-                                                                                         
-                if (dist <= radar.range) {                                                               
-                    if (hasLineOfSight(map, radar, x, y, uavFlightAltitude)) {                           
-                        float factor = (1.0f - (dist / radar.range));                
-                        float threat = radar.baseThreat * factor * factor;           
-                                                                                         
-                        Cell& cell = map.getCell(x, y);                                                 
+void ThreatMap::generateProceduralRadars(const Map& map, int count, float minDistanceBetweenRadars, std::mt19937& rng) {
+    int w = map.getWidth();
+    int h = map.getHeight();
+
+    struct Candidate {
+        int x, y;
+        float elevation;
+    };
+    std::vector<Candidate> candidates;
+
+    for (int y = 2; y < h - 2; ++y) {
+        for (int x = 2; x < w - 2; ++x) {
+            const Cell& c = map.getCell(x, y);
+            if (c.terrain != TerrainType::Water && c.terrain != TerrainType::Road) {
+                candidates.push_back({x, y, c.elevation});
+            }
+        }
+    }
+
+    std::sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {
+        return a.elevation > b.elevation;
+    });
+
+    int idCounter = 1;
+    for (const auto& cand : candidates) {
+        if (static_cast<int>(radars.size()) >= count) break;
+
+        bool tooClose = false;
+        for (const auto& r : radars) {
+            float dist = std::sqrt(std::pow(cand.x - r.x, 2) + std::pow(cand.y - r.y, 2));
+            if (dist < minDistanceBetweenRadars) {
+                tooClose = true;
+                break;
+            }
+        }
+
+        if (!tooClose) {
+            radars.emplace_back(idCounter++, cand.x, cand.y, 28.0f, 1.0f, 15.0f);
+        }
+    }
+}
+
+void ThreatMap::calculateThreats(Map& map, float uavFlightAltitude) {
+    int w = map.getWidth();
+    int h = map.getHeight();
+
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            map.getCell(x, y).threatLevel = 0.0f;
+        }
+    }
+
+    for (const auto& radar : radars) {
+        int minX = std::max(0, static_cast<int>(radar.x - radar.range));
+        int maxX = std::min(w - 1, static_cast<int>(radar.x + radar.range));
+        int minY = std::max(0, static_cast<int>(radar.y - radar.range));
+        int maxY = std::min(h - 1, static_cast<int>(radar.y + radar.range));
+
+        for (int y = minY; y <= maxY; ++y) {
+            for (int x = minX; x <= maxX; ++x) {
+                float dist = std::sqrt(std::pow(x - radar.x, 2) + std::pow(y - radar.y, 2));
+
+                if (dist <= radar.range) {
+                    if (hasLineOfSight(map, radar, x, y, uavFlightAltitude)) {
+                        float factor = (1.0f - (dist / radar.range));
+                        float threat = radar.baseThreat * factor * factor;
+
+                        Cell& cell = map.getCell(x, y);
                         cell.threatLevel = std::min(1.0f, cell.threatLevel + threat);
-                    }                                                                
-                }                                                                    
-            }                                                                        
-        }                                                                            
-    }                                                                                
+                    }
+                }
+            }
+        }
+    }
 }

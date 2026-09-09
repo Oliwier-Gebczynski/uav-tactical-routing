@@ -17,4 +17,3 @@ struct Cell{
         threatLevel = 0.0f;
     }
 };
-

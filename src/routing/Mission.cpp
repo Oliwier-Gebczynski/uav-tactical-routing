@@ -44,7 +44,6 @@ Path Mission::generateDirectPath(const Map& map) const {
 
         auto segment = Path::interpolateSegment(from.x, from.y, to.x, to.y, map, from.altitudeAGL);
 
-        // Zapobieganie dublowaniu punktu styku między segmentami
         size_t startIndex = (i == 0) ? 0 : 1;
         for (size_t j = startIndex; j < segment.size(); ++j) {
             path.addPoint(segment[j]);

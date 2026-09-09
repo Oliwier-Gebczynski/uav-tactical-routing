@@ -1,6 +1,6 @@
 #include "BaseTerrain.h"
 
-BaseTerrain::BaseTerrain(int seed, float scale, float waterLevel, float heightMulti) 
+BaseTerrain::BaseTerrain(int seed, float scale, float waterLevel, float heightMulti)
             : noise(seed), scale(scale), waterLevel(waterLevel), heightMulti(heightMulti) {}
 
 void BaseTerrain::generate(Map& map, std::mt19937& rng){

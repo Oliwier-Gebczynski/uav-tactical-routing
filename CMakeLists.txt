@@ -19,6 +19,9 @@ add_executable(
     src/map/threats/ThreatMap.cpp
     src/routing/Path.cpp
     src/routing/Mission.cpp
+    src/planner/CostEvaluator.cpp
+    src/planner/LocalSearch.cpp
+    src/planner/SimulatedAnnealing.cpp
 )
 
 target_include_directories(
