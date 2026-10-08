@@ -12,6 +12,7 @@ An end-to-end tactical mission routing system for Unmanned Aerial Vehicles (UAVs
 4. [Building and Running the C++ Planner](#building-and-running-the-c-planner)
 5. [How to Generate New Maps & Change Seeds](#how-to-generate-new-maps--change-seeds)
 6. [Visualization Tools & Viewer Versions](#visualization-tools--viewer-versions)
+   - [Academic Thesis & Publication Visualizer (`academic_viewer.py`)](#academic-thesis--publication-visualizer-academic_viewerpy)
    - [Viewer 1: Tactical C2 COP & Algorithm Benchmark (`tactical_c2_viewer.py`)](#viewer-1-tactical-c2-cop--algorithm-benchmark-tactical_c2_viewerpy)
    - [Viewer 2: Cross-Scenario Benchmark Comparator (`benchmark_comparator.py`)](#viewer-2-cross-scenario-benchmark-comparator-benchmark_comparatorpy)
    - [Viewer 3: 4-Quadrant Terrain & Threat Analyzer (`viewer.py`)](#viewer-3-4-quadrant-terrain--threat-analyzer-viewerpy)
@@ -161,10 +162,47 @@ cmake --build build && ./build/UAVPlanner
 
 ## Visualization Tools & Viewer Versions
 
-The project includes three distinct Python visualizers suited for different analysis tasks.
+The project includes specialized Python visualizers suited for different operational, academic, and diagnostic tasks.
+
+### Academic Thesis & Publication Visualizer (`academic_viewer.py`)
+This is the **dedicated academic and master's thesis visualizer** designed to produce publication-grade figures conforming to IEEE, Springer, and Elsevier standards. It features clean white paper styling, mathematical TeX notation ($E(\mathbf{p})$, $L_{3D}$, $R_{\mathrm{eff}}$, $h_{\mathrm{AGL}}$), cartographic shaded relief, flight cross-section profiles, Pareto trade-off analyses, and a formal `booktabs` results table with automated LaTeX code generation.
+
+#### Features for Master's Thesis:
+* **Academic Multi-Panel Dashboard (3x4 Layout)**:
+  * **Panel (a)**: Hypsometric DEM relief map with elevation contours, SAM radars ($R_{\max}$, lethal perimeter $0.5R$), LOS radar shadows, and directional trajectory vectors. Includes cartographic linear scale bar and compass North arrow.
+  * **Panel (b)**: Longitudinal flight cross-section profile comparing ground elevation vs. UAV flight ceiling ($z$ ASL and $h_{\mathrm{AGL}}$) with radar hazard exposure windows.
+  * **Panel (c)**: Total objective cost $E(\mathbf{p})$ bar chart with exact value labels and optimization percentage gain badge ($\Delta E$).
+  * **Panel (d)**: Multi-objective trade-off analysis chart (effective radar exposure $R_{\mathrm{eff}}$ vs. 3D flight length $L_{3D}$).
+  * **Panel (e)**: Simulated Annealing cooling convergence dynamics $E(k)$ with baseline threshold and Local Search descent marker.
+  * **Panel (f)**: Formal academic benchmark table (`booktabs` styling) displaying all 4 algorithmic variants.
+* **Master's Thesis Export Utilities**:
+  * **Automated LaTeX Code Generation (`--latex`)**: Prints or saves ready-to-copy `\begin{table}...\end{table}` code with `booktabs` formatting.
+  * **Individual Subchapter Figures Export (`--save-figures <dir>`)**: Exports each panel as an isolated high-resolution 300 DPI PNG and vector PDF for direct insertion into thesis chapters (`\includegraphics`).
+  * **Language Support (`--lang pl` / `--lang en`)**: Supports full Polish and English labeling.
+
+#### How to Launch:
+```bash
+# Interactive Academic Window:
+./python/venv/bin/python python/academic_viewer.py 1       # Test 1: Flat terrain radar evasion
+./python/venv/bin/python python/academic_viewer.py 2       # Test 2: Mountain ridge radar shadow
+./python/venv/bin/python python/academic_viewer.py 3       # Test 3: Canyon vs peaks navigation
+./python/venv/bin/python python/academic_viewer.py perlin  # Procedural Perlin fusion map
+
+# Export Full Dashboard for Thesis (300 DPI PNG / Vector PDF):
+./python/venv/bin/python python/academic_viewer.py perlin --save thesis_figure.png
+./python/venv/bin/python python/academic_viewer.py perlin --save thesis_figure.pdf
+
+# Export Individual Subfigures & LaTeX Table for Thesis Chapters:
+./python/venv/bin/python python/academic_viewer.py perlin --save-figures docs/thesis_figures/
+
+# Print Ready-to-Paste LaTeX Table to Console:
+./python/venv/bin/python python/academic_viewer.py perlin --latex
+```
+
+---
 
 ### Viewer 1: Tactical C2 COP & Algorithm Benchmark (`tactical_c2_viewer.py`)
-This is the **primary military-grade Command & Control dashboard**. It displays the entire operational picture side-by-side with multi-algorithm comparative analytics.
+This is the **primary military-grade Command & Control dashboard**. It displays the entire operational picture side-by-side with multi-algorithm comparative analytics in a dark tactical C2 theme.
 
 #### Screen Layout:
 * **Left Column (Grid 0–11)**:
