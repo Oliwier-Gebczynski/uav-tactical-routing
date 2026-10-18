@@ -48,7 +48,8 @@ bool ThreatMap::hasLineOfSight(const Map& map, const RadarStation& radar, int ta
         float rayHeight = radarAlt + t * (targetAlt - radarAlt);
 
         const Cell& sampleCell = map.getCell(sampleX, sampleY);
-        float effectiveTerrainHeight = sampleCell.elevation + getTerrainFeatureHeight(sampleCell.terrain);
+        float effectiveTerrainHeight = sampleCell.elevation +
+            (sampleCell.groundElevation ? 0.0f : getTerrainFeatureHeight(sampleCell.terrain));
 
         if (effectiveTerrainHeight > rayHeight) {
             return false;

@@ -1,3 +1,14 @@
 build/*
 python/venv/*
 data/maps/*
+.codex/*
+graphify-out/*
+AGENTS.md
+PLAN.md
+data/cache/
+__pycache__/
+data/scenarios/
+data/runs/
+python/__pycache__/
+
+python/__pycache__/tactical_c2_viewer.cpython-312.pyc

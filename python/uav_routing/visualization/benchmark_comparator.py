@@ -28,6 +28,7 @@ else:
         matplotlib.use('TkAgg')
 
 import matplotlib.pyplot as plt
+from ..paths import resolve_input_path
 
 SCENARIOS = {
     "test_1_flat": "data/maps/test_1_flat.json",
@@ -37,12 +38,9 @@ SCENARIOS = {
 }
 
 def load_data(filepath):
-    if not os.path.exists(filepath):
-        alt = os.path.join("..", filepath)
-        if os.path.exists(alt):
-            filepath = alt
-        else:
-            return None
+    filepath = resolve_input_path(filepath)
+    if not filepath.exists():
+        return None
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <nlohmann/json.hpp>
 #include "../common/Cell.h"
 
 class Map{
@@ -9,6 +10,7 @@ class Map{
         int height;
 
         std::vector<Cell> cells;
+        nlohmann::json metadata = nlohmann::json::object();
 
         int index(int x, int y) const;
 
@@ -22,4 +24,6 @@ class Map{
         const Cell& getCell(int x, int y) const;
 
         bool isInside(int x, int y) const;
+        const nlohmann::json& getMetadata() const { return metadata; }
+        void setMetadata(const nlohmann::json& value) { metadata = value; }
 };

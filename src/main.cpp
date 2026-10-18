@@ -13,6 +13,8 @@
 #include "planner/LocalSearch.h"
 #include "planner/SimulatedAnnealing.h"
 #include "io/JsonExporter.h"
+#include "io/JsonMapImporter.h"
+#include "io/ScenarioRunner.h"
 
 void printCostComparison(const std::string& scenarioName,
                          const CostBreakdown& before,
@@ -100,20 +102,20 @@ void printCostComparison(const std::string& scenarioName,
 
 void generatePerlinMap() {
     std::cout << "\n=== [MAPA GŁÓWNA] Proceduralny Teren Perlin (100x100) ===" << std::endl;
-    int seed = 67;
+    int seed = 12312;
     std::mt19937 rng(seed);
 
     Map map(100, 100);
     MapGenerator::generateProceduralMap(map, seed);
 
     ThreatMap threatMap;
-    threatMap.generateProceduralRadars(map, 3, 30.0f, rng);
+    threatMap.generateProceduralRadars(map, 2, 30.0f, rng);
     threatMap.calculateThreats(map, 10.0f);
 
     Waypoint start(1, 5.0f, 5.0f, 10.0f, WaypointType::Start, "Baza Startowa Alpha");
-    Waypoint wp1(2, 45.0f, 25.0f, 10.0f, WaypointType::Reconnaissance, "Cel 1 (Północ)");
-    Waypoint wp2(3, 85.0f, 65.0f, 10.0f, WaypointType::Reconnaissance, "Cel 2 (Wschód)");
-    Waypoint returnBase(4, 15.0f, 90.0f, 10.0f, WaypointType::Return, "Lądowisko Bravo");
+    Waypoint wp1(2, 15.0f, 80.0f, 10.0f, WaypointType::Reconnaissance, "Cel 1 (Północ)");
+    Waypoint wp2(3, 85.0f, 10.0f, 10.0f, WaypointType::Reconnaissance, "Cel 2 (Wschód)");
+    Waypoint returnBase(4, 90.0f, 90.0f, 10.0f, WaypointType::Return, "Lądowisko Bravo");
 
     Mission mission(start, returnBase);
     mission.addTarget(wp1);
@@ -297,7 +299,34 @@ void demonstrateStep4HybridOptimizerSuite() {
     std::cout << "\n[SUKCES KROK 4] Wszystkie asercje i testy SA + Local Search zakończone pomyślnie!" << std::endl;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc > 1) {
+        if (std::string(argv[1]) == "--help") {
+            std::cout << "Usage: UAVPlanner [--map imported.json --output exported.json]\n"
+                         "       UAVPlanner --scenario scenario.json --output result.json\n"
+                         "Without arguments: existing Perlin and test scenarios.\n"
+                         "--map: load and export an OSM+NMT terrain for inspection.\n";
+            return 0;
+        }
+        if (argc != 5 || (std::string(argv[1]) != "--map" && std::string(argv[1]) != "--scenario") || std::string(argv[3]) != "--output") {
+            std::cerr << "Usage: UAVPlanner --map|--scenario input.json --output output.json\n";
+            return 1;
+        }
+        try {
+            if (std::string(argv[1]) == "--scenario") {
+                runScenario(argv[2], argv[4]);
+                return 0;
+            }
+            Map map = JsonMapImporter::load(argv[2]);
+            JsonExporter::save(map, argv[4]);
+            std::cout << "Loaded OSM+NMT map: " << map.getWidth() << " x "
+                      << map.getHeight() << " m. Exported to " << argv[4] << '\n';
+            return 0;
+        } catch (const std::exception& error) {
+            std::cerr << "Map import failed: " << error.what() << '\n';
+            return 1;
+        }
+    }
     std::cout << "=======================================================" << std::endl;
     std::cout << "  PLANOWANIE TRAS UAV - SIMULATED ANNEALING & LOCAL SEARCH " << std::endl;
     std::cout << "=======================================================" << std::endl;

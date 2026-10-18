@@ -8,6 +8,7 @@ matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm, LightSource
 import matplotlib.patches as mpatches
+from ..paths import resolve_input_path
 
 MAP_SHORTCUTS = {
     "1": "data/maps/test_1_flat.json",
@@ -26,18 +27,11 @@ if len(sys.argv) > 1:
 else:
     MAP_FILE = "data/maps/perlin_full_test_map.json"
 
+MAP_FILE = str(resolve_input_path(MAP_FILE))
 if not os.path.exists(MAP_FILE):
-    alt_path = os.path.join("..", MAP_FILE)
-    if os.path.exists(alt_path):
-        MAP_FILE = alt_path
-    else:
-        print(f"Błąd: Nie znaleziono pliku mapy: {MAP_FILE}")
-        print("Dostępne skróty:")
-        print("  python viewer.py 1       -> Test 1: Płaski teren (koło)")
-        print("  python viewer.py 2       -> Test 2: Grzbiet górski (cień)")
-        print("  python viewer.py 3       -> Test 3: Kanion vs Szczyty")
-        print("  python viewer.py perlin  -> Mapa proceduralna Perlin")
-        sys.exit(1)
+    print(f"Błąd: Nie znaleziono pliku mapy: {MAP_FILE}")
+    print("Dostępne skróty: python/main.py view 1|2|3|perlin")
+    sys.exit(1)
 
 map_name = os.path.basename(MAP_FILE)
 print(f"Wczytywanie mapy: {MAP_FILE}...")
@@ -131,13 +125,30 @@ for r in radars:
     ax_fusion.text(rx + 1.2, ry - 1.2, f"R{r.get('id', '')}", color='black', fontsize=10, fontweight='heavy',
                    bbox=dict(boxstyle='round,pad=0.2', facecolor='yellow', alpha=0.8, edgecolor='black', linewidth=0.8))
 
-if len(path) > 0:
-    px = [p["x"] for p in path]
-    py = [p["y"] for p in path]
+comparison = data.get("comparison", {})
+baseline_run = comparison.get("baseline", {})
+pure_ls_run = comparison.get("pure_ls", {})
+pure_sa_run = comparison.get("pure_sa", {})
 
-    ax_fusion.scatter(px, py, color='#00E5FF', s=12, alpha=0.7, zorder=6, label=f"Odwiedzone komórki ({len(path)})")
+path_base = baseline_run.get("path", [])
+if len(path_base) > 1:
+    bx = [p["x"] for p in path_base]
+    by = [p["y"] for p in path_base]
+    ax_fusion.plot(bx, by, color='#FFB300', linewidth=1.8, linestyle='--', alpha=0.85, zorder=4, label="1. Prosta (Brak)")
 
-    ax_fusion.plot(px, py, color='#00E5FF', linewidth=2.4, linestyle='-', zorder=5, label="Wstępna Trasa UAV")
+path_ls = pure_ls_run.get("path", [])
+if len(path_ls) > 1:
+    lx = [p["x"] for p in path_ls]
+    ly = [p["y"] for p in path_ls]
+    ax_fusion.plot(lx, ly, color='#FF9100', linewidth=2.0, linestyle='-.', alpha=0.9, zorder=5, label="2. Local Search")
+
+path_sa = pure_sa_run.get("path", []) if len(pure_sa_run.get("path", [])) > 0 else path
+if len(path_sa) > 0:
+    px = [p["x"] for p in path_sa]
+    py = [p["y"] for p in path_sa]
+
+    ax_fusion.scatter(px, py, color='#00E5FF', s=12, alpha=0.7, zorder=6)
+    ax_fusion.plot(px, py, color='#00E5FF', linewidth=2.4, linestyle='-', zorder=6, label="3. Trasa SA")
 
 for wp in waypoints:
     wx, wy = wp["x"], wp["y"]

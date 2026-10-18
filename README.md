@@ -12,16 +12,23 @@ An end-to-end tactical mission routing system for Unmanned Aerial Vehicles (UAVs
 4. [Building and Running the C++ Planner](#building-and-running-the-c-planner)
 5. [How to Generate New Maps & Change Seeds](#how-to-generate-new-maps--change-seeds)
 6. [Visualization Tools & Viewer Versions](#visualization-tools--viewer-versions)
-   - [Academic Thesis & Publication Visualizer (`academic_viewer.py`)](#academic-thesis--publication-visualizer-academic_viewerpy)
-   - [Viewer 1: Tactical C2 COP & Algorithm Benchmark (`tactical_c2_viewer.py`)](#viewer-1-tactical-c2-cop--algorithm-benchmark-tactical_c2_viewerpy)
-   - [Viewer 2: Cross-Scenario Benchmark Comparator (`benchmark_comparator.py`)](#viewer-2-cross-scenario-benchmark-comparator-benchmark_comparatorpy)
-   - [Viewer 3: 4-Quadrant Terrain & Threat Analyzer (`viewer.py`)](#viewer-3-4-quadrant-terrain--threat-analyzer-viewerpy)
+   - [Viewer 1: Tactical C2 COP & Algorithm Benchmark (`dashboard`)](#viewer-1-tactical-c2-cop--algorithm-benchmark-dashboard)
+   - [Viewer 2: Cross-Scenario Benchmark Comparator (`benchmark`)](#viewer-2-cross-scenario-benchmark-comparator-benchmark)
+   - [Viewer 3: 4-Quadrant Terrain & Threat Analyzer (`view`)](#viewer-3-4-quadrant-terrain--threat-analyzer-view)
 7. [Algorithm Comparison & Evaluated Metrics](#algorithm-comparison--evaluated-metrics)
 8. [Multi-Objective Objective Function](#multi-objective-objective-function)
 
 ---
 
 ## Key Features
+
+The desktop [UAV Mission Control](docs/mission-control.md) application provides
+OSM+NMT map generation, a clickable radar and waypoint editor, portable scenario
+files and simulation result panels. Launch with:
+
+```bash
+python/venv/bin/python python/main.py gui
+```
 
 * **3D Terrain & Radar Shadow Modeling**: Computes Line-of-Sight (LOS) radar coverage taking into account Digital Elevation Models (DEM), creating realistic radar shadows behind ridges, valleys, and canyons.
 * **Biome Concealment**: Rewards low-altitude masking over forests and valleys to reduce detection probability ($R_{\text{eff}} = R_{\text{raw}} \cdot (1 - \text{concealment})$).
@@ -49,11 +56,16 @@ uav-tactical-routing/
 │       ├── test_3_canyon_peaks.json
 │       └── perlin_full_test_map.json
 ├── python/
-│   ├── tactical_c2_viewer.py   # Primary Tactical C2 dashboard & benchmark plots
-│   ├── benchmark_comparator.py # Multi-scenario comparative analytics
-│   ├── viewer.py               # 4-quadrant terrain & threat inspection tool
-│   ├── requirements.txt        # Python package dependencies
-│   └── venv/                   # Preconfigured virtual environment
+│   ├── main.py                # GUI and command-line entry point
+│   ├── uav_routing/
+│   │   ├── gui/               # Desktop application
+│   │   ├── maps/              # OSM + NMT importer
+│   │   ├── scenarios/         # Scenario documents and validation
+│   │   ├── visualization/     # Terrain, tactical and benchmark viewers
+│   │   └── paths.py           # Shared repository path resolution
+│   ├── tests/                 # Unit/integration tests and shared fixtures
+│   ├── requirements/          # Base and map-import dependencies
+│   └── venv/                  # Preconfigured virtual environment
 └── src/
     ├── main.cpp                # Execution entry point & test scenarios
     ├── map/                    # Grid map, biomes, Perlin noise & DEM generators
@@ -77,7 +89,7 @@ A virtual environment is pre-configured in `python/venv`. To use the system envi
 ```bash
 python3 -m venv python/venv
 source python/venv/bin/activate
-pip install -r python/requirements.txt
+pip install -r python/requirements/base.txt
 ```
 
 ---
@@ -106,6 +118,10 @@ When executed, the system:
 ---
 
 ## How to Generate New Maps & Change Seeds
+
+Polish OSM + GUGiK NMT maps are also supported. See
+[Mapy Polski: OSM + NMT](docs/polskie-mapy.md) for the Gliwice example,
+height estimation rules, local/offline import and C++ loading instructions.
 
 All scenario configurations and procedural generation seeds are defined in [`src/main.cpp`](file:///home/opg/Documents/uav-tactical-routing/src/main.cpp).
 
@@ -162,47 +178,10 @@ cmake --build build && ./build/UAVPlanner
 
 ## Visualization Tools & Viewer Versions
 
-The project includes specialized Python visualizers suited for different operational, academic, and diagnostic tasks.
+The project includes three distinct Python visualizers suited for different analysis tasks.
 
-### Academic Thesis & Publication Visualizer (`academic_viewer.py`)
-This is the **dedicated academic and master's thesis visualizer** designed to produce publication-grade figures conforming to IEEE, Springer, and Elsevier standards. It features clean white paper styling, mathematical TeX notation ($E(\mathbf{p})$, $L_{3D}$, $R_{\mathrm{eff}}$, $h_{\mathrm{AGL}}$), cartographic shaded relief, flight cross-section profiles, Pareto trade-off analyses, and a formal `booktabs` results table with automated LaTeX code generation.
-
-#### Features for Master's Thesis:
-* **Academic Multi-Panel Dashboard (3x4 Layout)**:
-  * **Panel (a)**: Hypsometric DEM relief map with elevation contours, SAM radars ($R_{\max}$, lethal perimeter $0.5R$), LOS radar shadows, and directional trajectory vectors. Includes cartographic linear scale bar and compass North arrow.
-  * **Panel (b)**: Longitudinal flight cross-section profile comparing ground elevation vs. UAV flight ceiling ($z$ ASL and $h_{\mathrm{AGL}}$) with radar hazard exposure windows.
-  * **Panel (c)**: Total objective cost $E(\mathbf{p})$ bar chart with exact value labels and optimization percentage gain badge ($\Delta E$).
-  * **Panel (d)**: Multi-objective trade-off analysis chart (effective radar exposure $R_{\mathrm{eff}}$ vs. 3D flight length $L_{3D}$).
-  * **Panel (e)**: Simulated Annealing cooling convergence dynamics $E(k)$ with baseline threshold and Local Search descent marker.
-  * **Panel (f)**: Formal academic benchmark table (`booktabs` styling) displaying all 4 algorithmic variants.
-* **Master's Thesis Export Utilities**:
-  * **Automated LaTeX Code Generation (`--latex`)**: Prints or saves ready-to-copy `\begin{table}...\end{table}` code with `booktabs` formatting.
-  * **Individual Subchapter Figures Export (`--save-figures <dir>`)**: Exports each panel as an isolated high-resolution 300 DPI PNG and vector PDF for direct insertion into thesis chapters (`\includegraphics`).
-  * **Language Support (`--lang pl` / `--lang en`)**: Supports full Polish and English labeling.
-
-#### How to Launch:
-```bash
-# Interactive Academic Window:
-./python/venv/bin/python python/academic_viewer.py 1       # Test 1: Flat terrain radar evasion
-./python/venv/bin/python python/academic_viewer.py 2       # Test 2: Mountain ridge radar shadow
-./python/venv/bin/python python/academic_viewer.py 3       # Test 3: Canyon vs peaks navigation
-./python/venv/bin/python python/academic_viewer.py perlin  # Procedural Perlin fusion map
-
-# Export Full Dashboard for Thesis (300 DPI PNG / Vector PDF):
-./python/venv/bin/python python/academic_viewer.py perlin --save thesis_figure.png
-./python/venv/bin/python python/academic_viewer.py perlin --save thesis_figure.pdf
-
-# Export Individual Subfigures & LaTeX Table for Thesis Chapters:
-./python/venv/bin/python python/academic_viewer.py perlin --save-figures docs/thesis_figures/
-
-# Print Ready-to-Paste LaTeX Table to Console:
-./python/venv/bin/python python/academic_viewer.py perlin --latex
-```
-
----
-
-### Viewer 1: Tactical C2 COP & Algorithm Benchmark (`tactical_c2_viewer.py`)
-This is the **primary military-grade Command & Control dashboard**. It displays the entire operational picture side-by-side with multi-algorithm comparative analytics in a dark tactical C2 theme.
+### Viewer 1: Tactical C2 COP & Algorithm Benchmark (`dashboard`)
+This is the **primary military-grade Command & Control dashboard**. It displays the entire operational picture side-by-side with multi-algorithm comparative analytics.
 
 #### Screen Layout:
 * **Left Column (Grid 0–11)**:
@@ -222,22 +201,22 @@ This is the **primary military-grade Command & Control dashboard**. It displays 
 #### How to Launch:
 ```bash
 # Using predefined map shortcuts:
-./python/venv/bin/python python/tactical_c2_viewer.py 1       # Test 1: Flat terrain radar circumnavigation
-./python/venv/bin/python python/tactical_c2_viewer.py 2       # Test 2: Ridge wall radar shadow utilization
-./python/venv/bin/python python/tactical_c2_viewer.py 3       # Test 3: Canyon vs peaks navigation
-./python/venv/bin/python python/tactical_c2_viewer.py perlin  # Procedural Perlin fusion map
+./python/venv/bin/python python/main.py dashboard 1       # Test 1: Flat terrain radar circumnavigation
+./python/venv/bin/python python/main.py dashboard 2       # Test 2: Ridge wall radar shadow utilization
+./python/venv/bin/python python/main.py dashboard 3       # Test 3: Canyon vs peaks navigation
+./python/venv/bin/python python/main.py dashboard perlin  # Procedural Perlin fusion map
 
 # Loading any custom map file:
-./python/venv/bin/python python/tactical_c2_viewer.py data/maps/test_1_flat.json
+./python/venv/bin/python python/main.py dashboard data/maps/test_1_flat.json
 
 # Headless / Batch export to PNG without opening window:
-./python/venv/bin/python python/tactical_c2_viewer.py 1 --save output_test1.png
-./python/venv/bin/python python/tactical_c2_viewer.py perlin -s c2_perlin_dashboard.png
+./python/venv/bin/python python/main.py dashboard 1 --save output_test1.png
+./python/venv/bin/python python/main.py dashboard perlin -s c2_perlin_dashboard.png
 ```
 
 ---
 
-### Viewer 2: Cross-Scenario Benchmark Comparator (`benchmark_comparator.py`)
+### Viewer 2: Cross-Scenario Benchmark Comparator (`benchmark`)
 A dedicated multi-scenario benchmark tool that loads all four maps simultaneously and generates aggregate comparative analytics.
 
 #### Features:
@@ -250,15 +229,15 @@ A dedicated multi-scenario benchmark tool that loads all four maps simultaneousl
 #### How to Launch:
 ```bash
 # Interactive window:
-./python/venv/bin/python python/benchmark_comparator.py
+./python/venv/bin/python python/main.py benchmark
 
 # Save to PNG file:
-./python/venv/bin/python python/benchmark_comparator.py --save benchmark_summary.png
+./python/venv/bin/python python/main.py benchmark --save benchmark_summary.png
 ```
 
 ---
 
-### Viewer 3: 4-Quadrant Terrain & Threat Analyzer (`viewer.py`)
+### Viewer 3: 4-Quadrant Terrain & Threat Analyzer (`view`)
 A focused four-quadrant diagnostic tool for inspecting map layers:
 1. **Quadrant (0,0)**: Land Cover Classification (Water, Grass, Forest, Road, Building).
 2. **Quadrant (0,1)**: DEM Elevation Map with colorbar scale.
@@ -267,10 +246,10 @@ A focused four-quadrant diagnostic tool for inspecting map layers:
 
 #### How to Launch:
 ```bash
-./python/venv/bin/python python/viewer.py 1
-./python/venv/bin/python python/viewer.py 2
-./python/venv/bin/python python/viewer.py 3
-./python/venv/bin/python python/viewer.py perlin
+./python/venv/bin/python python/main.py view 1
+./python/venv/bin/python python/main.py view 2
+./python/venv/bin/python python/main.py view 3
+./python/venv/bin/python python/main.py view perlin
 ```
 
 ---

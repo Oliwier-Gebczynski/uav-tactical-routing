@@ -4,6 +4,8 @@
 #include <fstream>
 #include <filesystem>
 #include <iostream>
+#include <iomanip>
+#include <stdexcept>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -15,11 +17,21 @@ void JsonExporter::save(const Map& map,
                         const Path* path,
                         const std::vector<Waypoint>* waypoints,
                         const std::vector<DecisionEvent>* decisionLog,
-                        const SAResult* saResult) {
+                        const SAResult* saResult,
+                        const json* runConfig) {
     json output;
 
     output["width"] = map.getWidth();
     output["height"] = map.getHeight();
+    if (!map.getMetadata().empty()) output["metadata"] = map.getMetadata();
+    if (runConfig) output["scenario"] = *runConfig;
+    if (runConfig && mission) {
+        output["inputMission"]["waypoints"] = json::array();
+        for (const auto& wp : mission->getAllWaypoints()) {
+            output["inputMission"]["waypoints"].push_back({{"id", wp.id}, {"name", wp.name},
+                {"type", WaypointTypeToString(wp.type)}, {"x", wp.x}, {"y", wp.y}, {"altitudeAGL", wp.altitudeAGL}});
+        }
+    }
 
     for (int y = 0; y < map.getHeight(); y++) {
         for (int x = 0; x < map.getWidth(); x++) {
@@ -31,6 +43,12 @@ void JsonExporter::save(const Map& map,
             c["obstacle"] = cell.obstacle;
             c["concealment"] = cell.concealment;
             c["threatLevel"] = cell.threatLevel;
+            if (cell.groundElevation) {
+                c["groundElevation"] = *cell.groundElevation;
+                c["obstacleHeight"] = cell.elevation - *cell.groundElevation;
+                c["landCoverKnown"] = cell.landCoverKnown;
+                if (!cell.buildingId.empty()) c["buildingId"] = cell.buildingId;
+            }
 
             output["cells"][y][x] = c;
         }
@@ -94,7 +112,7 @@ void JsonExporter::save(const Map& map,
 
         auto stats = path->getStats(map);
         CostEvaluator evaluator;
-        CostBreakdown cost = evaluator.evaluate(*path, map);
+        CostBreakdown cost = saResult ? saResult->bestCost : evaluator.evaluate(*path, map);
 
         json statsJson;
         statsJson["totalDistance"] = stats.totalDistance;
@@ -233,10 +251,15 @@ void JsonExporter::save(const Map& map,
         std::filesystem::create_directories(filePath.parent_path());
     }
 
-    std::ofstream file(filename);
+    const auto temporaryPath = std::filesystem::path(filename + ".tmp");
+    std::ofstream file(temporaryPath);
     if (!file.is_open()) {
-        std::cerr << "Błąd zapisu pliku: " << filename << std::endl;
-        return;
+        throw std::runtime_error("Cannot write map: " + filename);
     }
-    file << output.dump(4);
+    // Serialize directly to the stream rather than allocating a second copy
+    // of the entire map as a formatted string.
+    file << std::setw(2) << output;
+    file.close();
+    if (!file) throw std::runtime_error("Incomplete map write: " + filename);
+    std::filesystem::rename(temporaryPath, filePath);
 }

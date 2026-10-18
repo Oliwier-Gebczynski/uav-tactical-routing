@@ -17,6 +17,7 @@ else:
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm, LightSource
 import matplotlib.patches as mpatches
+from ..paths import resolve_input_path
 from matplotlib.gridspec import GridSpec
 
 MAP_SHORTCUTS = {
@@ -37,19 +38,11 @@ for i, arg in enumerate(sys.argv[1:], 1):
         map_arg = MAP_SHORTCUTS.get(arg.strip(), arg.strip())
 
 MAP_FILE = map_arg
+MAP_FILE = str(resolve_input_path(MAP_FILE))
 if not os.path.exists(MAP_FILE):
-    alt_path = os.path.join("..", MAP_FILE)
-    if os.path.exists(alt_path):
-        MAP_FILE = alt_path
-    else:
-        print(f"[BŁĄD C2] Nie znaleziono pliku mapy taktycznej: {MAP_FILE}")
-        print("Dostępne mapy:")
-        print("  python tactical_c2_viewer.py 1       -> Test 1: Płaski teren (Omijanie radaru)")
-        print("  python tactical_c2_viewer.py 2       -> Test 2: Grzbiet górski (Cień radarowy)")
-        print("  python tactical_c2_viewer.py 3       -> Test 3: Kanion vs Szczyty")
-        print("  python tactical_c2_viewer.py perlin  -> Mapa proceduralna Perlin")
-        print("  python tactical_c2_viewer.py 1 --save output.png")
-        sys.exit(1)
+    print(f"Błąd: Nie znaleziono pliku mapy: {MAP_FILE}")
+    print("Dostępne skróty: python/main.py dashboard 1|2|3|perlin")
+    sys.exit(1)
 
 map_name = os.path.basename(MAP_FILE)
 print(f"[C2 TAC-NET] Wczytywanie danych operacyjnych z: {MAP_FILE}")
@@ -190,30 +183,38 @@ elif len(key_wps) > 1:
     by = [wp["y"] for wp in key_wps]
     ax_map.plot(bx, by, color='#FFB300', linewidth=1.8, linestyle='--', alpha=0.85, zorder=4, label="1. Prosta (Brak planowania)")
 
+path_ls = pure_ls_run.get("path", [])
+if len(path_ls) > 1:
+    lx = [p["x"] for p in path_ls]
+    ly = [p["y"] for p in path_ls]
+    ax_map.plot(lx, ly, color='#FF9100', linewidth=2.0, linestyle='-.', alpha=0.9, zorder=5, label="2. Local Search")
+    ax_map.scatter(lx[::3], ly[::3], color='#FF9100', s=7, alpha=0.7, zorder=5)
+
 path_sa = pure_sa_run.get("path", [])
 if len(path_sa) > 1:
     sx = [p["x"] for p in path_sa]
     sy = [p["y"] for p in path_sa]
-    ax_map.plot(sx, sy, color='#E040FB', linewidth=1.4, linestyle=':', alpha=0.75, zorder=5, label="2. Czyste SA")
-    ax_map.scatter(sx[::4], sy[::4], color='#E040FB', s=5, alpha=0.6, zorder=5)
+    ax_map.plot(sx, sy, color='#E040FB', linewidth=1.6, linestyle=':', alpha=0.8, zorder=6, label="3. Czyste SA")
+    ax_map.scatter(sx[::4], sy[::4], color='#E040FB', s=6, alpha=0.6, zorder=6)
 
-if len(path) > 0:
-    px = np.array([p["x"] for p in path])
-    py = np.array([p["y"] for p in path])
-    pz = np.array([p.get("z", 0.0) for p in path])
+path_sals = sa_ls_run.get("path", []) if len(sa_ls_run.get("path", [])) > 0 else path
+if len(path_sals) > 0:
+    px = np.array([p["x"] for p in path_sals])
+    py = np.array([p["y"] for p in path_sals])
+    pz = np.array([p.get("z", 0.0) for p in path_sals])
 
-    ax_map.plot(px, py, color='#00E5FF', linewidth=5.0, alpha=0.22, zorder=6)
-    ax_map.plot(px, py, color='#00F0FF', linewidth=2.4, linestyle='-', zorder=7, label="3. SA + Local Search")
-    ax_map.scatter(px[::2], py[::2], color='#FFFFFF', s=6, alpha=0.85, zorder=8)
+    ax_map.plot(px, py, color='#00E5FF', linewidth=5.0, alpha=0.22, zorder=7)
+    ax_map.plot(px, py, color='#00F0FF', linewidth=2.4, linestyle='-', zorder=8, label="4. SA + Local Search")
+    ax_map.scatter(px[::2], py[::2], color='#FFFFFF', s=6, alpha=0.85, zorder=9)
 
-    step_arrow = max(8, len(path) // 12)
-    for i in range(0, len(path) - step_arrow, step_arrow):
+    step_arrow = max(8, len(path_sals) // 12)
+    for i in range(0, len(path_sals) - step_arrow, step_arrow):
         dx = px[i + step_arrow] - px[i]
         dy = py[i + step_arrow] - py[i]
         mag = np.hypot(dx, dy)
         if mag > 0.1:
             ax_map.arrow(px[i], py[i], dx * 0.45, dy * 0.45, head_width=1.4, head_length=1.6,
-                         fc='#00E5FF', ec='#00E5FF', zorder=7, length_includes_head=True)
+                         fc='#00E5FF', ec='#00E5FF', zorder=8, length_includes_head=True)
 
 for wp in waypoints:
     wx, wy = wp["x"], wp["y"]
@@ -247,11 +248,12 @@ for cx in [5, width // 2, width - 5]:
         ax_map.plot(cx, cy, '+', color='#00E5FF', markersize=8, markeredgewidth=1.0, alpha=0.5)
 
 patches = [mpatches.Patch(color=MIL_COLORS[i], label=MIL_LABELS[i]) for i in range(len(MIL_COLORS))]
-line_base = matplotlib.lines.Line2D([0], [0], color='#FFB300', linestyle='--', linewidth=1.6, label='1. Prosta (Brak planowania)')
-line_sa = matplotlib.lines.Line2D([0], [0], color='#E040FB', linestyle=':', linewidth=1.5, label='2. Czyste SA')
-line_opt = matplotlib.lines.Line2D([0], [0], color='#00F0FF', linestyle='-', linewidth=2.2, label='3. SA + Local Search')
-legend_handles = patches + [line_base, line_sa, line_opt]
-ax_legend.legend(handles=legend_handles, loc="center", ncol=4, fontsize=6.5, framealpha=0.9, facecolor='#10141D', edgecolor='#37474F', handletextpad=0.5, columnspacing=1.0)
+line_base = matplotlib.lines.Line2D([0], [0], color='#FFB300', linestyle='--', linewidth=1.6, label='1. Prosta')
+line_ls = matplotlib.lines.Line2D([0], [0], color='#FF9100', linestyle='-.', linewidth=1.8, label='2. Local Search')
+line_sa = matplotlib.lines.Line2D([0], [0], color='#E040FB', linestyle=':', linewidth=1.6, label='3. Czyste SA')
+line_sals = matplotlib.lines.Line2D([0], [0], color='#00F0FF', linestyle='-', linewidth=2.2, label='4. SA + Local Search')
+legend_handles = patches + [line_base, line_ls, line_sa, line_sals]
+ax_legend.legend(handles=legend_handles, loc="center", ncol=5, fontsize=6.2, framealpha=0.9, facecolor='#10141D', edgecolor='#37474F', handletextpad=0.4, columnspacing=0.8)
 
 ax_map.text(0.96, 0.94, "▲\nN", transform=ax_map.transAxes, color='#00E5FF', fontsize=11, fontweight='bold',
             fontfamily='monospace', ha='center', va='center',
@@ -260,14 +262,15 @@ ax_map.text(0.96, 0.94, "▲\nN", transform=ax_map.transAxes, color='#00E5FF', f
 ax_profile.set_title("ELEVATION CROSS-SECTION // FLIGHT CEILING PROFILE [TERRAIN MASKING vs DEM]",
                      fontsize=8.5, fontweight='bold', fontfamily='monospace', color='#00E5FF', loc='left')
 
-if len(path) > 1:
+active_path = path_sals if len(path_sals) > 1 else (path_sa if len(path_sa) > 1 else path)
+if len(active_path) > 1:
     dists = [0.0]
     elevs = []
     flight_alts = []
     threat_along_path = []
 
-    for i in range(len(path)):
-        pt = path[i]
+    for i in range(len(active_path)):
+        pt = active_path[i]
         ix = int(np.clip(round(pt["x"]), 0, width - 1))
         iy = int(np.clip(round(pt["y"]), 0, height - 1))
         cell_elev = elevation_grid[iy, ix]
@@ -277,7 +280,7 @@ if len(path) > 1:
         threat_along_path.append(threat_grid[iy, ix])
 
         if i > 0:
-            p_prev = path[i - 1]
+            p_prev = active_path[i - 1]
             prev_ix = int(np.clip(round(p_prev["x"]), 0, width - 1))
             prev_iy = int(np.clip(round(p_prev["y"]), 0, height - 1))
             prev_z = p_prev.get("z", elevation_grid[prev_iy, prev_ix] + 10.0)
@@ -306,8 +309,8 @@ if len(path) > 1:
     ax_profile.grid(True, color='#1E293B', linestyle=':', linewidth=0.7)
     ax_profile.legend(loc="upper right", fontsize=7.0, facecolor='#10141D', edgecolor='#37474F')
 
-dist_val = path_stats.get("totalDistance", dists[-1] if (len(path) > 1 and 'dists' in locals()) else 0.0)
-cells_val = path_stats.get("totalVisitedCells", len(path))
+dist_val = path_stats.get("totalDistance", dists[-1] if (len(active_path) > 1 and 'dists' in locals()) else 0.0)
+cells_val = path_stats.get("totalVisitedCells", len(active_path))
 threat_eff = path_stats.get("effectiveThreatExposure", path_stats.get("totalThreatExposure", 0.0))
 threat_raw = path_stats.get("totalThreatExposure", threat_eff)
 max_threat = path_stats.get("maxThreatLevel", 0.0) * 100.0
@@ -355,12 +358,12 @@ tort_ls = float(pure_ls_run.get("tortuosity", tort_base))
 time_ls = float(pure_ls_run.get("flightTimeSec", dist_ls / (60 / 3.6)))
 wps_ls = int(pure_ls_run.get("waypointsCount", wps_base))
 
-cost_sa = float(pure_sa_run.get("totalCost", total_cost * 1.08))
-dist_sa = float(pure_sa_run.get("distance", dist_val * 1.04))
-threat_sa = float(pure_sa_run.get("threatRisk", threat_eff * 1.05))
-tort_sa = float(pure_sa_run.get("tortuosity", (dist_sa / dist_base) if dist_base > 0.001 else 1.25))
+cost_sa = float(pure_sa_run.get("totalCost", total_cost * 1.05))
+dist_sa = float(pure_sa_run.get("distance", dist_val * 1.02))
+threat_sa = float(pure_sa_run.get("threatRisk", threat_eff * 1.03))
+tort_sa = float(pure_sa_run.get("tortuosity", (dist_sa / dist_base) if dist_base > 0.001 else 1.15))
 time_sa = float(pure_sa_run.get("flightTimeSec", dist_sa / (60 / 3.6)))
-wps_sa = int(pure_sa_run.get("waypointsCount", len(waypoints) + 3))
+wps_sa = int(pure_sa_run.get("waypointsCount", len(waypoints)))
 
 cost_sals = float(sa_ls_run.get("totalCost", total_cost))
 dist_sals = float(sa_ls_run.get("distance", dist_val))
@@ -379,9 +382,9 @@ if threat_base > 0.001:
 else:
     threat_red_str = "100.0 % (BEZPIECZNA)"
 
-if len(path) > 0:
+if len(active_path) > 0:
     agls = []
-    for pt in path:
+    for pt in active_path:
         pix = int(np.clip(round(pt["x"]), 0, width - 1))
         piy = int(np.clip(round(pt["y"]), 0, height - 1))
         agls.append(pt.get("z", elevation_grid[piy, pix] + 10.0) - elevation_grid[piy, pix])
@@ -434,13 +437,13 @@ hud_text = (
     f" STATUS MISJI:           {status_label}\n"
     f" ──────────────────────────────────────────────────────\n"
     f" 1. ZESTAWIENIE PORÓWNAWCZE METRYK (4 WARIANTY):\n"
-    f"    Metryka        Prosta   Czysty SA   SA+Local\n"
-    f"    Koszt E:       {cost_base:>7.1f}  {cost_sa:>8.1f}   {cost_sals:>7.1f} (-{imp_cost_pct:.1f}%)\n"
-    f"    Długość 3D:    {dist_base:>6.1f}m  {dist_sa:>7.1f}m   {dist_sals:>6.1f}m ({detour_str})\n"
-    f"    Ryzyko OPL:    {threat_base:>7.2f}  {threat_sa:>8.2f}   {threat_sals:>7.2f} ({threat_red_str})\n"
-    f"    Krętość (L/D): {tort_base:>7.2f}  {tort_sa:>8.2f}   {tort_sals:>7.2f}\n"
-    f"    Czas lotu ETA: {time_base:>6.1f}s  {time_sa:>7.1f}s   {time_sals:>6.1f}s\n"
-    f"    Punkty WP:     {wps_base:>7d}  {wps_sa:>8d}   {wps_sals:>7d} (-{wps_sa - wps_sals} w LS)\n"
+    f"    Metryka        Prosta   Local Search  Czysty SA   SA+Local\n"
+    f"    Koszt E:       {cost_base:>7.1f}  {cost_ls:>12.1f}  {cost_sa:>10.1f}   {cost_sals:>7.1f} (-{imp_cost_pct:.1f}%)\n"
+    f"    Długość 3D:    {dist_base:>6.1f}m  {dist_ls:>11.1f}m  {dist_sa:>9.1f}m   {dist_sals:>6.1f}m ({detour_str})\n"
+    f"    Ryzyko OPL:    {threat_base:>7.2f}  {threat_ls:>12.2f}  {threat_sa:>10.2f}   {threat_sals:>7.2f} ({threat_red_str})\n"
+    f"    Krętość (L/D): {tort_base:>7.2f}  {tort_ls:>12.2f}  {tort_sa:>10.2f}   {tort_sals:>7.2f}\n"
+    f"    Czas lotu ETA: {time_base:>6.1f}s  {time_ls:>11.1f}s  {time_sa:>9.1f}s   {time_sals:>6.1f}s\n"
+    f"    Punkty WP:     {wps_base:>7d}  {wps_ls:>12d}  {wps_sa:>10d}   {wps_sals:>7d}\n"
     f" ──────────────────────────────────────────────────────\n"
     f" 2. PRZETRWANIE I UNIKANIE OPL (SAM):\n"
     f"   • Redukcja zagrożenia OPL:       {threat_red_str}\n"

@@ -20,5 +20,6 @@ public:
                      const Path* path = nullptr,
                      const std::vector<Waypoint>* waypoints = nullptr,
                      const std::vector<DecisionEvent>* decisionLog = nullptr,
-                     const SAResult* saResult = nullptr);
+                     const SAResult* saResult = nullptr,
+                     const nlohmann::json* runConfig = nullptr);
 };

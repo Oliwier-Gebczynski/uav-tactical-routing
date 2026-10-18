@@ -9,6 +9,8 @@ add_executable(
     src/main.cpp
     src/map/Map.cpp
     src/io/JsonExporter.cpp
+    src/io/JsonMapImporter.cpp
+    src/io/ScenarioRunner.cpp
     src/map/generators/PerlinNoise.cpp
     src/map/generators/MapGenerator.cpp
     src/map/generators/biomes/BaseTerrain.cpp
@@ -35,3 +37,11 @@ target_link_libraries(
     PRIVATE
     nlohmann_json::nlohmann_json
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(JsonMapImporterTest tests/JsonMapImporterTest.cpp src/io/JsonMapImporter.cpp src/map/Map.cpp src/map/threats/ThreatMap.cpp)
+    target_include_directories(JsonMapImporterTest PRIVATE src)
+    target_link_libraries(JsonMapImporterTest PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME JsonMapImporter COMMAND JsonMapImporterTest)
+endif()
